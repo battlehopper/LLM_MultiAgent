@@ -12,9 +12,9 @@ User=ec2-user
 Group=docker
 WorkingDirectory=/home/ec2-user/LLM_MultiAgent
 EnvironmentFile=-/home/ec2-user/LLM_MultiAgent/.env
-ExecStart=/usr/bin/docker compose -f docker-compose.prod.yml up -d --remove-orphans
-ExecStop=/usr/bin/docker compose -f docker-compose.prod.yml down
-ExecReload=/usr/bin/docker compose -f docker-compose.prod.yml up -d --build
+ExecStart=/home/ec2-user/LLM_MultiAgent/scripts/compose.sh -f docker-compose.prod.yml up -d --remove-orphans
+ExecStop=/home/ec2-user/LLM_MultiAgent/scripts/compose.sh -f docker-compose.prod.yml down
+ExecReload=/home/ec2-user/LLM_MultiAgent/scripts/compose.sh -f docker-compose.prod.yml up -d --build
 TimeoutStartSec=300
 
 [Install]

@@ -1,5 +1,5 @@
 # Produção / AWS EC2 — gateway público, processor só na rede Docker, Agent local.
-# Uso: docker compose -f docker-compose.prod.yml up -d --build
+# Uso: ./scripts/compose.sh -f docker-compose.prod.yml up -d --build
 
 services:
   datadog-agent:

@@ -119,11 +119,25 @@ nano .env   # DD_API_KEY, DD_SITE, DD_ENV=aws-ec2
 
 ### 4. Subir em produção
 
+Use o wrapper `./scripts/compose.sh` (detecta `docker compose` v2 ou `docker-compose` v1):
+
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml ps
-docker compose -f docker-compose.prod.yml logs -f retail-gateway
+./scripts/compose.sh -f docker-compose.prod.yml up -d --build
+./scripts/compose.sh -f docker-compose.prod.yml ps
+./scripts/compose.sh -f docker-compose.prod.yml logs -f retail-gateway
 ```
+
+#### Erro `unknown shorthand flag: 'f' in -f`
+
+O Docker está instalado, mas falta o **plugin Compose v2**. Na EC2 (Amazon Linux):
+
+```bash
+sudo dnf install -y docker-compose-plugin
+docker compose version
+./scripts/compose.sh -f docker-compose.prod.yml up -d --build
+```
+
+Alternativa legada: `docker-compose -f docker-compose.prod.yml up -d --build` (com hífen).
 
 ### 5. Testar
 
@@ -235,7 +249,8 @@ PROCESSOR_URL=http://localhost:8002
 │   ├── run_gateway.sh
 │   ├── run_processor.sh
 │   ├── demo_client.py
-│   └── ec2-setup.sh             # Bootstrap Docker na EC2
+│   ├── ec2-setup.sh             # Bootstrap Docker + Compose na EC2
+│   └── compose.sh               # Wrapper docker compose / docker-compose
 ├── docker-compose.yml           # Dev local (portas 8001 + 8002)
 ├── docker-compose.prod.yml      # EC2 / produção (só 8001 público)
 └── Dockerfile
