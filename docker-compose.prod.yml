@@ -1,9 +1,10 @@
-# Desenvolvimento local — expõe portas 8001 e 8002 para debug.
-# Produção / EC2: use docker-compose.prod.yml (processor sem porta pública).
+# Produção / AWS EC2 — gateway público, processor só na rede Docker, Agent local.
+# Uso: docker compose -f docker-compose.prod.yml up -d --build
 
 services:
   datadog-agent:
     image: gcr.io/datadoghq/agent:7
+    restart: unless-stopped
     environment:
       DD_API_KEY: ${DD_API_KEY:?Defina DD_API_KEY no .env}
       DD_SITE: ${DD_SITE:-datadoghq.com}
@@ -11,45 +12,39 @@ services:
       DD_APM_NON_LOCAL_TRAFFIC: "true"
       DD_LOGS_ENABLED: "true"
       DD_PROCESS_AGENT_ENABLED: "true"
+      DD_TAGS: "env:${DD_ENV:-aws-ec2}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
-      - "8126:8126"
+      - "127.0.0.1:8126:8126"
 
   retail-processor:
     build: .
+    restart: unless-stopped
     command: ["./scripts/run_processor.sh"]
-    environment:
+    environment: &app_env
       DD_AGENT_HOST: datadog-agent
-      DD_SERVICE: retail-processor
       DD_LLMOBS_ML_APP: retail-assistant
       DD_LLMOBS_ENABLED: "1"
-      DD_ENV: ${DD_ENV:-dev}
-      DD_API_KEY: ${DD_API_KEY}
+      DD_ENV: ${DD_ENV:-aws-ec2}
+      DD_VERSION: ${DD_VERSION:-1.0.0}
       DD_SITE: ${DD_SITE:-datadoghq.com}
-      DD_LLMOBS_AGENTLESS_ENABLED: ${DD_LLMOBS_AGENTLESS_ENABLED:-true}
+      DD_LLMOBS_AGENTLESS_ENABLED: "false"
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       USE_MOCK_LLM: ${USE_MOCK_LLM:-auto}
-    ports:
-      - "8002:8002"
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      DD_SERVICE: retail-processor
     depends_on:
       - datadog-agent
 
   retail-gateway:
     build: .
+    restart: unless-stopped
     command: ["./scripts/run_gateway.sh"]
     environment:
-      DD_AGENT_HOST: datadog-agent
+      <<: *app_env
       DD_SERVICE: retail-gateway
-      DD_LLMOBS_ML_APP: retail-assistant
-      DD_LLMOBS_ENABLED: "1"
-      DD_ENV: ${DD_ENV:-dev}
-      DD_API_KEY: ${DD_API_KEY}
-      DD_SITE: ${DD_SITE:-datadoghq.com}
-      DD_LLMOBS_AGENTLESS_ENABLED: ${DD_LLMOBS_AGENTLESS_ENABLED:-true}
       PROCESSOR_URL: http://retail-processor:8002
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      USE_MOCK_LLM: ${USE_MOCK_LLM:-auto}
     ports:
       - "8001:8001"
     depends_on:

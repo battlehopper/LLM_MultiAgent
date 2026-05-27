@@ -64,7 +64,9 @@ Terminal 3 — demo:
 python scripts/demo_client.py
 ```
 
-## Docker Compose (Agent + ambos serviços)
+## Docker Compose (desenvolvimento local)
+
+Expõe as portas **8001** e **8002** para debug.
 
 ```bash
 cp .env.example .env
@@ -72,6 +74,99 @@ cp .env.example .env
 docker compose up --build
 python scripts/demo_client.py
 ```
+
+## Deploy na AWS EC2
+
+Recomendado para servidor: **`docker-compose.prod.yml`** — apenas o gateway fica público na porta **8001**; o processor comunica só pela rede Docker; o Datadog Agent escuta em `127.0.0.1:8126`.
+
+### 1. Instância e Security Group
+
+| Item | Sugestão |
+|------|----------|
+| AMI | Amazon Linux 2023 ou Ubuntu 22.04 |
+| Tipo | `t3.small` ou superior |
+| Inbound | SSH (22) do seu IP; TCP **8001** (gateway) |
+| Não abrir | Porta **8002** (processor interno) |
+| Outbound | HTTPS (443) para Datadog e OpenAI |
+
+Opcional: **Elastic IP** para IP fixo.
+
+### 2. Bootstrap na EC2
+
+```bash
+ssh -i sua-chave.pem ec2-user@<IP_PUBLICO>
+
+# Opção A — script de setup (Amazon Linux / Ubuntu)
+git clone <URL_DO_REPO> LLM_MultiAgent
+cd LLM_MultiAgent
+chmod +x scripts/ec2-setup.sh
+./scripts/ec2-setup.sh
+# Reconecte o SSH se o script adicionou seu usuário ao grupo docker
+
+# Opção B — manual
+sudo dnf install -y docker git    # Amazon Linux
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER
+```
+
+### 3. Configurar ambiente
+
+```bash
+cd ~/LLM_MultiAgent
+cp deploy/.env.ec2.example .env
+nano .env   # DD_API_KEY, DD_SITE, DD_ENV=aws-ec2
+```
+
+### 4. Subir em produção
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f retail-gateway
+```
+
+### 5. Testar
+
+Da sua máquina (substitua `<IP_EC2>`):
+
+```bash
+curl -s http://<IP_EC2>:8001/health
+
+curl -s -X POST "http://<IP_EC2>:8001/chat" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"Status do pedido BR-10482 e estoque SKU-7781"}' | jq
+```
+
+No Datadog, filtre por `env:aws-ec2` (ou o valor definido em `DD_ENV`).
+
+### 6. Reinício automático (systemd)
+
+Ajuste `User`, `WorkingDirectory` e caminhos em `deploy/systemd/retail-multiagent.service` se necessário:
+
+```bash
+sudo cp deploy/systemd/retail-multiagent.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable retail-multiagent
+sudo systemctl start retail-multiagent
+sudo systemctl status retail-multiagent
+```
+
+### Diagrama na EC2
+
+```mermaid
+flowchart LR
+    Internet -->|8001| GW[retail-gateway]
+    GW -->|rede Docker| PR[retail-processor]
+    GW --> DD[datadog-agent]
+    PR --> DD
+    DD -->|443| Datadog[Datadog SaaS]
+```
+
+### Boas práticas
+
+- Não commitar `.env`; preferir **AWS SSM Parameter Store** ou **Secrets Manager** para `DD_API_KEY`.
+- Em produção real, coloque **ALB + HTTPS (ACM)** na frente da porta 8001.
+- `USE_MOCK_LLM=true` na EC2 evita dependência da OpenAI em demos; defina `OPENAI_API_KEY` quando for usar modelo real.
 
 ## O que observar no Datadog
 
@@ -128,12 +223,21 @@ PROCESSOR_URL=http://localhost:8002
 ## Estrutura do repositório
 
 ```
-├── common/                 # LLM client, config, dados retail mock
+├── common/                      # LLM client, config, dados retail mock
 ├── services/
-│   ├── gateway/            # Agente 1 + API /chat
-│   └── processor/          # Agente 2 + API /process
-├── scripts/                # run_*.sh e demo_client.py
-├── docker-compose.yml
+│   ├── gateway/                 # Agente 1 + API /chat
+│   └── processor/               # Agente 2 + API /process
+├── deploy/
+│   ├── .env.ec2.example         # Template .env para EC2
+│   └── systemd/
+│       └── retail-multiagent.service
+├── scripts/
+│   ├── run_gateway.sh
+│   ├── run_processor.sh
+│   ├── demo_client.py
+│   └── ec2-setup.sh             # Bootstrap Docker na EC2
+├── docker-compose.yml           # Dev local (portas 8001 + 8002)
+├── docker-compose.prod.yml      # EC2 / produção (só 8001 público)
 └── Dockerfile
 ```
 
