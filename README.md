@@ -117,15 +117,37 @@ cp deploy/.env.ec2.example .env
 nano .env   # DD_API_KEY, DD_SITE, DD_ENV=aws-ec2
 ```
 
-### 4. Subir em produção
+### 4. Subir em produção (terminal liberado / detach)
 
-Use o wrapper `./scripts/compose.sh` (detecta `docker compose` v2 ou `docker-compose` v1):
+A flag **`-d`** (`--detach`) sobe os containers em **background** e devolve o prompt do terminal.
+
+**Forma recomendada na EC2:**
+
+```bash
+./scripts/start-prod.sh
+```
+
+Equivalente manual:
 
 ```bash
 ./scripts/compose.sh -f docker-compose.prod.yml up -d --build
 ./scripts/compose.sh -f docker-compose.prod.yml ps
-./scripts/compose.sh -f docker-compose.prod.yml logs -f retail-gateway
 ```
+
+| Comando | Efeito |
+|---------|--------|
+| `up -d --build` | Sobe em background; você pode fechar o SSH |
+| `logs -f retail-gateway` | **Prende** o terminal (só use para debug) |
+| `logs --tail=50 retail-gateway` | Mostra últimas linhas e **sai** |
+| `down` | Para e remove os containers |
+
+**Persistir após reboot da EC2** — use systemd (seção 6 abaixo) ou:
+
+```bash
+nohup ./scripts/start-prod.sh > /var/log/retail-multiagent.log 2>&1 &
+```
+
+**Sessão SSH longa (opcional):** `tmux` ou `screen` — útil se quiser rodar `logs -f` e desanexar depois (`Ctrl+B` `D` no tmux).
 
 #### Erro `unknown shorthand flag: 'f' in -f`
 
@@ -276,6 +298,7 @@ PROCESSOR_URL=http://localhost:8002
 │   ├── ec2-setup.sh             # Bootstrap Docker + Compose na EC2
 │   ├── ensure-docker.sh         # Instala/inicia o daemon Docker
 │   ├── install-compose.sh       # Instala Compose v2 (binário) no AL2/2023
+│   ├── start-prod.sh            # Sobe stack em detach (-d)
 │   └── compose.sh               # Wrapper docker compose / docker-compose
 ├── docker-compose.yml           # Dev local (portas 8001 + 8002)
 ├── docker-compose.prod.yml      # EC2 / produção (só 8001 público)
