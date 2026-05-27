@@ -129,15 +129,21 @@ Use o wrapper `./scripts/compose.sh` (detecta `docker compose` v2 ou `docker-com
 
 #### Erro `unknown shorthand flag: 'f' in -f`
 
-O Docker está instalado, mas falta o **plugin Compose v2**. Na EC2 (Amazon Linux):
+O Docker está instalado, mas falta o **Compose v2** (`docker compose`).
+
+#### Erro `No match for argument: docker-compose-plugin`
+
+Comum no **Amazon Linux 2** — o pacote não existe nos repositórios padrão. Instale o binário oficial:
 
 ```bash
-sudo dnf install -y docker-compose-plugin
+cd ~/LLM_MultiAgent
+git pull
+sudo ./scripts/install-compose.sh
 docker compose version
 ./scripts/compose.sh -f docker-compose.prod.yml up -d --build
 ```
 
-Alternativa legada: `docker-compose -f docker-compose.prod.yml up -d --build` (com hífen).
+O script baixa o Compose v2 do GitHub para `/usr/local/lib/docker/cli-plugins/`.
 
 ### 5. Testar
 
@@ -250,6 +256,7 @@ PROCESSOR_URL=http://localhost:8002
 │   ├── run_processor.sh
 │   ├── demo_client.py
 │   ├── ec2-setup.sh             # Bootstrap Docker + Compose na EC2
+│   ├── install-compose.sh       # Instala Compose v2 (binário) no AL2/2023
 │   └── compose.sh               # Wrapper docker compose / docker-compose
 ├── docker-compose.yml           # Dev local (portas 8001 + 8002)
 ├── docker-compose.prod.yml      # EC2 / produção (só 8001 público)

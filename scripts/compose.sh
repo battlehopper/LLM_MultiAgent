@@ -11,6 +11,5 @@ if command -v docker-compose >/dev/null 2>&1; then
 fi
 
 echo "Docker Compose não encontrado." >&2
-echo "Amazon Linux: sudo dnf install -y docker-compose-plugin" >&2
-echo "Ubuntu:       sudo apt install -y docker-compose-v2" >&2
+echo "Execute na EC2: sudo ./scripts/install-compose.sh" >&2
 exit 1
