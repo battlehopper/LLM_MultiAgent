@@ -4,6 +4,7 @@
 set -euo pipefail
 
 REPO_URL="${REPO_URL:-}"
+# Ex.: INSTALL_DIR=/opt/llmagent ./scripts/ec2-setup.sh
 INSTALL_DIR="${INSTALL_DIR:-$HOME/LLM_MultiAgent}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

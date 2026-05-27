@@ -111,19 +111,34 @@ sudo usermod -aG docker $USER
 
 ### 3. Configurar ambiente
 
+O diretório depende de onde você clonou o repo. Exemplos comuns:
+
+| Caminho | Quando usar |
+|---------|-------------|
+| `/opt/llmagent` | Clone manual em `/opt` |
+| `~/LLM_MultiAgent` | Clone no home do usuário `ec2-user` |
+| `/root/LLM_MultiAgent` | Só existe se você clonou como root nesse path |
+
 ```bash
-cd ~/LLM_MultiAgent
+# Ajuste APP_DIR para o seu caso:
+export APP_DIR=/opt/llmagent
+cd "$APP_DIR"
+ls -la    # deve listar scripts/, services/, docker-compose.prod.yml
+
 cp deploy/.env.ec2.example .env
 nano .env   # DD_API_KEY, DD_SITE, DD_ENV=aws-ec2
 ```
+
+Se `cd ~/LLM_MultiAgent` retornar *No such file or directory*, o projeto **não está no home** — use `find /opt /home -name "docker-compose.prod.yml" 2>/dev/null` para achar o path.
 
 ### 4. Subir em produção (terminal liberado / detach)
 
 A flag **`-d`** (`--detach`) sobe os containers em **background** e devolve o prompt do terminal.
 
-**Forma recomendada na EC2:**
+**Forma recomendada na EC2** (rode **dentro** do diretório do projeto, ex. `/opt/llmagent`):
 
 ```bash
+cd /opt/llmagent   # ou seu APP_DIR
 ./scripts/start-prod.sh
 ```
 
