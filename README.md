@@ -145,6 +145,24 @@ docker compose version
 
 O script baixa o Compose v2 do GitHub para `/usr/local/lib/docker/cli-plugins/`.
 
+#### Erro `Cannot connect to the Docker daemon at unix:///var/run/docker.sock`
+
+O binário `docker` existe, mas o **serviço não está rodando**:
+
+```bash
+sudo ./scripts/ensure-docker.sh
+# ou manualmente:
+sudo systemctl enable --now docker
+sudo systemctl status docker
+docker info
+```
+
+Depois:
+
+```bash
+./scripts/compose.sh -f docker-compose.prod.yml up -d --build
+```
+
 ### 5. Testar
 
 Da sua máquina (substitua `<IP_EC2>`):
@@ -256,6 +274,7 @@ PROCESSOR_URL=http://localhost:8002
 │   ├── run_processor.sh
 │   ├── demo_client.py
 │   ├── ec2-setup.sh             # Bootstrap Docker + Compose na EC2
+│   ├── ensure-docker.sh         # Instala/inicia o daemon Docker
 │   ├── install-compose.sh       # Instala Compose v2 (binário) no AL2/2023
 │   └── compose.sh               # Wrapper docker compose / docker-compose
 ├── docker-compose.yml           # Dev local (portas 8001 + 8002)
