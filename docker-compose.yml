@@ -22,7 +22,7 @@ services:
     environment:
       DD_AGENT_HOST: datadog-agent
       DD_SERVICE: retail-processor
-      DD_LLMOBS_ML_APP: retail-assistant
+      DD_LLMOBS_ML_APP: ${DD_LLMOBS_ML_APP:-retail-assistant}
       DD_LLMOBS_ENABLED: "1"
       DD_ENV: ${DD_ENV:-dev}
       DD_API_KEY: ${DD_API_KEY}
@@ -41,7 +41,7 @@ services:
     environment:
       DD_AGENT_HOST: datadog-agent
       DD_SERVICE: retail-gateway
-      DD_LLMOBS_ML_APP: retail-assistant
+      DD_LLMOBS_ML_APP: ${DD_LLMOBS_ML_APP:-retail-assistant}
       DD_LLMOBS_ENABLED: "1"
       DD_ENV: ${DD_ENV:-dev}
       DD_API_KEY: ${DD_API_KEY}

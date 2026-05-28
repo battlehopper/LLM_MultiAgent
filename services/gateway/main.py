@@ -73,7 +73,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         concierge_brief=result["concierge_brief"],
         specialist_summary=result["specialist_summary"],
         trace_hint=(
-            "Trace unificado no Datadog LLM Observability (ml_app=retail-assistant) "
+            f"Trace unificado no Datadog LLM Observability (ml_app={ML_APP_NAME}) "
             "com spans APM em retail-gateway → retail-processor"
         ),
     )

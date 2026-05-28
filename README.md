@@ -33,7 +33,7 @@ Ambos compartilham **`DD_LLMOBS_ML_APP=retail-assistant`** para a visão **unifi
 
 - Python 3.10+
 - Conta Datadog com [LLM Observability](https://www.datadoghq.com/product/ai/llm-observability/) habilitada
-- `DD_API_KEY` e `DD_SITE` configurados
+- `DD_API_KEY` e `DD_SITE` do **seu tenant** (ex.: `us5.datadoghq.com`, não `datadoghq.com` se a org for US5)
 
 ## Execução local
 
@@ -245,9 +245,18 @@ flowchart LR
 
 ## O que observar no Datadog
 
+### Site e nome da aplicação LLM
+
+| Variável | Onde ver no Datadog |
+|----------|---------------------|
+| `DD_SITE` | Canto inferior esquerdo (ex. **US5** → `us5.datadoghq.com`) |
+| `DD_LLMOBS_ML_APP` | Nome da app em **LLM Observability** |
+
+Se `DD_SITE` estiver errado (ex. `datadoghq.com` numa org **US5**), o Agent retorna **`API Key invalid (403)`** e nenhum trace aparece.
+
 ### LLM Observability (visão unificada)
 
-1. Acesse **LLM Observability** → aplicação **`retail-assistant`**
+1. Acesse **LLM Observability** → aplicação definida em `DD_LLMOBS_ML_APP` (ex. `llmobs_retail_multiagent_running_over_multiservices` ou `retail-assistant`)
 2. Abra um trace da execução — você verá a cadeia completa:
    - `workflow` — `retail-customer-chat` (gateway)
    - `agent` — `retail-concierge`
